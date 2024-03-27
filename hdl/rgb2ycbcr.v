@@ -30,40 +30,24 @@ module rgb2ycbcr (
     output           DATA_VALID_O    
   );
 
-  // wire [15:0] y0_coef, cb0_coef, cr0_coef;
-  // wire signed [15:0] y1_coef, y2_coef, y3_coef, 
-  //                   cb1_coef, cb2_coef, cb3_coef, 
-  //                   cr1_coef, cr2_coef, cr3_coef;
+  // Coefficient values for converting RGB image to Y,Cb,Cr 
+  parameter y0_coef  = 0            ;
+  parameter y1_coef  = 0.299        ;
+  parameter y2_coef  = 0.587        ;
+  parameter y3_coef  = 0.114        ;
+  parameter cb0_coef = 128          ;
+  parameter cb1_coef = -0.169       ;
+  parameter cb2_coef = -0.331       ;
+  parameter cb3_coef = 0.5          ;
+  parameter cr0_coef = 128          ;
+  parameter cr1_coef = 0.5          ;
+  parameter cr2_coef = -0.419       ;
+  parameter cr3_coef = -0.081       ;
 
-  // Q8.16 => since all coefficients are less than 0 so 16 bit was used for the fractional part 
-  // assign y0_coef  = 16'h0   ;
-  // assign y1_coef  = 16'h2645; // (0.299 * 32768)
-  // assign y2_coef  = 16'h4B23; // (0.587 * 32768)
-  // assign y3_coef  = 16'hE98 ;
-  // assign cb0_coef = 16'h80  ;
-  // assign cb1_coef = 16'hEA5E;
-  // assign cb2_coef = 16'hD5A2;
-  // assign cb3_coef = 16'h4000;
-  // assign cr0_coef = 16'h80  ;
-  // assign cr1_coef = 16'h4000;
-  // assign cr2_coef = 16'hCA5F;
-  // assign cr3_coef = 16'hF5A2;
-
-  parameter y0_coef  = 0;
-  parameter y1_coef  = 0.299;
-  parameter y2_coef  = 0.587;
-  parameter y3_coef  = 0.114;
-  parameter cb0_coef = 128;
-  parameter cb1_coef = -0.169;
-  parameter cb2_coef = -0.331;
-  parameter cb3_coef = 0.5;
-  parameter cr0_coef = 128;
-  parameter cr1_coef = 0.5;
-  parameter cr2_coef = -0.419;
-  parameter cr3_coef = -0.081;
-  parameter COEF_WIDTH = 24;
-  parameter COEF_FRACTIONAL_BITS=15;
-  parameter INPUT_WIDTH = 8;
+  // Q8.16 Fixed point decleration and scaling the ceofficients
+  parameter COEF_WIDTH = 24         ;
+  parameter COEF_FRACTIONAL_BITS=15 ;
+  parameter INPUT_WIDTH = 8         ;
 
   localparam SCALED_Y0_C = y0_coef * (1 << COEF_FRACTIONAL_BITS);
   localparam SCALED_Y1_C = y1_coef * (1 << COEF_FRACTIONAL_BITS);
@@ -85,13 +69,18 @@ module rgb2ycbcr (
   localparam MULTIPLIED_WIDTH = INPUT_WIDTH + COEF_WIDTH - 1;
 
   reg signed [MULTIPLIED_WIDTH-1:0] y_r, cb_r, cr_r ;
-  reg       data_valid_r    ;
+  reg        data_valid_r                           ;
 
-  assign Y_O  =  y_r[23:15]        ;
-  assign CB_O = cb_r[23:15]        ;
-  assign CR_O = cr_r[23:15]        ;
-  assign DATA_VALID_O = data_valid_r;
 
+  // _______________________________ ASYNC ASSIGNMENTS _______________________________ 
+
+  assign Y_O  =  y_r[23:15]           ;
+  assign CB_O = cb_r[23:15]           ;
+  assign CR_O = cr_r[23:15]           ;
+  assign DATA_VALID_O = data_valid_r  ;
+
+  // _______________________________ MAIN LOGIC _______________________________ 
+  
   always @(posedge CLK_I) begin
     if(!RST_N_I)begin
       y_r           <= 0 ;
